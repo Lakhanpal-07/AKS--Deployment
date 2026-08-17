@@ -1,0 +1,39 @@
+name: Terraform CI-CD
+
+on:
+  push:
+    branches: [ test01 ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    env:
+      ARM_CLIENT_ID: 727b51d4-39e5-4089-9949-5a71de5419fd
+      ARM_CLIENT_SECRET: d067734d-6bee-42ad-8c9e-ffa55b814c55
+      ARM_SUBSCRIPTION_ID: 6321a6ef-361a-4ca7-b8e8-6665fd334708
+      ARM_TENANT_ID: 1039230a-b5d9-49fe-909f-2c31ff800bb2
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Terraform Init
+        run: terraform init -backend-config="env/backend.tfvars"
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -var-file="env/dev.tfvars" -out=tfplan
+
+      - name: Terraform Apply (auto-approve)
+        if: github.ref == 'refs/heads/test01'
+        run: terraform apply -auto-approve tfplan
